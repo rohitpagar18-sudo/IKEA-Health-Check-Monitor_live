@@ -220,28 +220,28 @@ class HealthCheckMonitor:
     def handle_success(self, url: str):
         """Handle URL health check success"""
         was_down = self.consecutive_failures[url] >= Config.CONSECUTIVE_FAILURES_THRESHOLD
-        
+
         if was_down:
             downtime_duration = datetime.now() - self.downtime_start.get(url, datetime.now())
             self.logger.info(
-                f"✓ {url} is now UP after {downtime_duration.total_seconds():.0f}s downtime"
+                f"[RECOVERY] {url} is now UP after {downtime_duration.total_seconds():.0f}s downtime"
             )
             self._send_recovery_alert(url, downtime_duration)
-        
+
         self.consecutive_failures[url] = 0
         self.downtime_start.pop(url, None)
     
     def _send_alert(self, url: str, status_code: int, message: str):
         """Send alert for URL failure"""
         alert_message = (
-            f"🚨 ALERT: Server Down\n"
+            f"[ALERT] Server Down\n"
             f"URL: {url}\n"
             f"Status Code: {status_code}\n"
             f"Error: {message}\n"
             f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"Consecutive Failures: {self.consecutive_failures[url]}"
         )
-        
+
         self.alert_logger.error(alert_message)
         self.logger.error(f"ALERT TRIGGERED: {url}")
         
@@ -252,12 +252,12 @@ class HealthCheckMonitor:
     def _send_recovery_alert(self, url: str, downtime_duration: timedelta):
         """Send alert for URL recovery"""
         alert_message = (
-            f"✓ RECOVERY: Server Back Online\n"
+            f"[RECOVERY] Server Back Online\n"
             f"URL: {url}\n"
             f"Downtime Duration: {downtime_duration.total_seconds():.0f} seconds\n"
             f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         )
-        
+
         self.alert_logger.info(alert_message)
         self.logger.warning(alert_message)
         
@@ -266,17 +266,43 @@ class HealthCheckMonitor:
             self._send_recovery_email(url, downtime_duration)
     
     def _send_email_alert(self, url: str, status_code: int, message: str):
-        """Send email alert (requires valid SMTP configuration)"""
+        """Send email alert (tries win32 first, falls back to SMTP)"""
         if not Config.ENABLE_EMAIL_ALERTS:
             return
-        
+
+        # Generate current health check report
+        report_data = self._generate_report()
+
+        try:
+            # Try win32 email sender first
+            from email_sender_win32 import OutlookEmailSender
+
+            sender = OutlookEmailSender()
+            success = sender.send_alert_email(url, status_code, message, report_data)
+
+            if success:
+                self.logger.info(f"Win32 Email alert sent for {url}")
+            else:
+                self.logger.error(f"Failed to send Win32 email alert for {url}")
+                # Fallback to SMTP
+                self._send_smtp_alert_email(url, status_code, message, report_data)
+
+        except ImportError:
+            # Fallback to SMTP if win32 not available
+            self.logger.warning("Win32 email sender not available, falling back to SMTP")
+            self._send_smtp_alert_email(url, status_code, message, report_data)
+        except Exception as e:
+            self.logger.error(f"Failed to send email alert: {str(e)}")
+
+    def _send_smtp_alert_email(self, url: str, status_code: int, message: str, report_data: dict = None):
+        """Fallback SMTP email alert with report data"""
         try:
             config = Config.EMAIL_CONFIG
             msg = MIMEMultipart()
             msg['From'] = config['sender_email']
             msg['To'] = ', '.join(config['recipient_emails'])
-            msg['Subject'] = f"🚨 IKEA Server Health Alert: {url}"
-            
+            msg['Subject'] = f"[ALERT] IKEA Server Health Alert: {url}"
+
             body = (
                 f"Server Down Alert\n\n"
                 f"URL: {url}\n"
@@ -286,30 +312,69 @@ class HealthCheckMonitor:
                 f"Consecutive Failures: {self.consecutive_failures[url]}\n\n"
                 f"Please investigate immediately."
             )
-            
+
+            if report_data:
+                body += f"\n\n--- HEALTH CHECK REPORT ---\n"
+                body += f"Report Timestamp: {report_data.get('timestamp', 'N/A')}\n"
+                body += f"Monitoring Duration: {report_data.get('monitoring_duration_seconds', 0):.0f} seconds\n"
+                body += f"Total Checks: {report_data.get('total_checks', 0)}\n"
+                body += f"Total Failures: {report_data.get('total_failures', 0)}\n"
+                body += f"Failure Rate: {report_data.get('failure_rate', '0%')}\n"
+                body += f"URLs Monitored: {report_data.get('monitored_urls', 0)}\n\n"
+
+                # Add URL status summary
+                url_summary = report_data.get('url_status_summary', {})
+                if url_summary:
+                    body += "URL STATUS SUMMARY:\n"
+                    for url_key, status in url_summary.items():
+                        body += f"- {url_key}: {status.get('current_status', 'UNKNOWN')} "
+                        body += f"(Failures: {status.get('consecutive_failures', 0)})\n"
+                    body += "\n"
+
             msg.attach(MIMEText(body, 'plain'))
-            
+
             with smtplib.SMTP(config['smtp_server'], config['smtp_port']) as server:
                 server.starttls()
                 server.login(config['sender_email'], config['sender_password'])
                 server.send_message(msg)
-            
-            self.logger.info(f"Email alert sent for {url}")
+
+            self.logger.info(f"SMTP Email alert sent for {url}")
         except Exception as e:
-            self.logger.error(f"Failed to send email alert: {str(e)}")
+            self.logger.error(f"Failed to send SMTP email alert: {str(e)}")
     
     def _send_recovery_email(self, url: str, downtime_duration: timedelta):
         """Send recovery email alert"""
         if not Config.ENABLE_EMAIL_ALERTS:
             return
-        
+
+        try:
+            # Import win32 email sender
+            from email_sender_win32 import send_recovery
+
+            # Send recovery alert using win32
+            success = send_recovery(url, downtime_duration.total_seconds())
+
+            if success:
+                self.logger.info(f"Recovery email sent for {url}")
+            else:
+                self.logger.error(f"Failed to send recovery email for {url}")
+
+        except ImportError:
+            # Fallback to SMTP if win32 not available
+            self.logger.warning("Win32 email sender not available, falling back to SMTP")
+            self._send_smtp_recovery_email(url, downtime_duration)
+        except Exception as e:
+            self.logger.error(f"Failed to send recovery email: {str(e)}")
+
+    def _send_smtp_recovery_email(self, url: str, downtime_duration: timedelta):
+        """Fallback SMTP recovery email alert"""
         try:
             config = Config.EMAIL_CONFIG
             msg = MIMEMultipart()
             msg['From'] = config['sender_email']
             msg['To'] = ', '.join(config['recipient_emails'])
-            msg['Subject'] = f"✓ IKEA Server Recovered: {url}"
-            
+            msg['Subject'] = f"[RECOVERY] IKEA Server Recovered: {url}"
+
             body = (
                 f"Server Recovery Alert\n\n"
                 f"URL: {url}\n"
@@ -317,17 +382,17 @@ class HealthCheckMonitor:
                 f"Downtime Duration: {downtime_duration.total_seconds():.0f} seconds\n"
                 f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
-            
+
             msg.attach(MIMEText(body, 'plain'))
-            
+
             with smtplib.SMTP(config['smtp_server'], config['smtp_port']) as server:
                 server.starttls()
                 server.login(config['sender_email'], config['sender_password'])
                 server.send_message(msg)
-            
-            self.logger.info(f"Recovery email sent for {url}")
+
+            self.logger.info(f"SMTP Recovery email sent for {url}")
         except Exception as e:
-            self.logger.error(f"Failed to send recovery email: {str(e)}")
+            self.logger.error(f"Failed to send SMTP recovery email: {str(e)}")
     
     def run_single_check_cycle(self):
         """Run a single health check cycle for all URLs"""
@@ -342,14 +407,14 @@ class HealthCheckMonitor:
             self.total_checks += 1
             
             if is_healthy:
-                status_icon = "✓"
+                status_icon = "[OK]"
                 self.logger.info(
                     f"{status_icon} {url} - Status: {status_code} - "
                     f"Response Time: {response_time:.3f}s"
                 )
                 self.handle_success(url)
             else:
-                status_icon = "✗"
+                status_icon = "[FAIL]"
                 self.logger.warning(
                     f"{status_icon} {url} - Status: {status_code} - {message}"
                 )

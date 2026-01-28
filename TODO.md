@@ -1,7 +1,7 @@
 # IKEA Health Check - Email Integration Task
 
 ## Task Overview
-Add a separate file for sending emails using win32 library (Outlook) with specified sender and recipient emails.
+Add a separate file for sending emails using win32 library (Outlook) with specified sender and recipient emails, and create professional HTML email templates for health check alerts.
 
 ## Completed Tasks
 - [x] Create `email_sender_win32.py` file using win32com.client for Outlook email sending
