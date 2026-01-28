@@ -1,21 +1,96 @@
-# IKEA Server Health Check Monitor
+# IKEA Server Health Check Monitoring Tool
 
-## Overview
-
-This is an automated health check monitoring tool designed to continuously monitor IKEA server URLs, detect downtime, and provide timely alerts for proactive resolution. It helps improve operational visibility and reduces the risk of disruptions to store activities.
+A simple, automated Python-based health check monitoring tool for IKEA server URLs with live dashboards, email alerting, and CI/CD integration.
 
 ## Features
 
-✅ **Continuous URL Monitoring** - Automatically checks server availability at configurable intervals
-✅ **Health Status Tracking** - Maintains detailed history of each URL's health status
-✅ **Automatic Alerting** - Sends alerts when servers go down or come back online
-✅ **Email Notifications** - Optional email alerts for critical failures (requires SMTP configuration)
-✅ **Comprehensive Logging** - Detailed logs for audit trails and troubleshooting
-✅ **JSON Reporting** - Machine-readable reports for integration with other tools
-✅ **HTML & CSV Reports** - User-friendly report generation in multiple formats
-✅ **Response Time Tracking** - Monitors server response times for performance analysis
-✅ **Failure Rate Statistics** - Overall and per-URL failure rate tracking
-✅ **Downtime Duration Tracking** - Records how long each outage lasted
+✅ **Continuous URL Monitoring** - Checks server URLs every 5 minutes (configurable)
+✅ **Automatic Alerting** - Email notifications when servers go down/recover
+✅ **Live Dashboards** - Flask dashboard for local monitoring + GitHub Pages for live reporting
+✅ **Email Support** - Outlook (win32com) for internal demo, SMTP fallback for clients
+✅ **JSON Reporting** - Structured health check reports for analysis
+✅ **Excel/HTML Exports** - Generate reports in multiple formats
+✅ **GitHub Actions Integration** - Automated checks every 5 minutes in CI/CD
+✅ **Easy Configuration** - Single `config.ini` file for all settings
+
+## Quick Start
+
+### 1. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Configure Settings
+Edit `config.ini` to customize monitoring intervals, email settings, and logging.
+
+### 3. Add URLs to Monitor
+Edit `urls.txt` and add one URL per line.
+
+### 4. Run Health Check
+```bash
+# Single cycle (for testing or CI/CD)
+python health_check_monitor.py --once
+
+# Continuous monitoring
+python health_check_monitor.py
+```
+
+### 5. View Live Dashboard
+```bash
+# Flask dashboard (local)
+python dashboard.py
+# Open http://localhost:5000
+
+# GitHub Pages (live)
+# Access at: https://your-username.github.io/your-repo/
+```
+
+## Configuration (config.ini)
+
+```ini
+[MONITORING]
+check_interval = 300           # Seconds between checks
+quick_check_interval = 60      # Seconds between checks if URLs are down
+request_timeout = 10           # Timeout per request
+alert_threshold = 2            # Consecutive failures before alert
+
+[EMAIL_ALERTS]
+enabled = false                # Set to true to enable alerts
+use_outlook = true             # Use Outlook (win32com) - Primary for demo
+use_smtp = false               # Use SMTP fallback - For future clients
+sender_email = your_email@cognizant.com
+recipient_emails = admin@ikea.com,ops@ikea.com
+```
+
+## Email Alerting
+
+### Outlook (Internal Demo)
+- Automatically uses Windows credentials
+- Set `use_outlook = true` and `enabled = true` in config.ini
+- Requires: pywin32 and Outlook running on Windows
+
+### SMTP (Other Clients)
+- For future use with external email providers
+- Set `use_smtp = true` and configure SMTP details in config.ini
+
+## Reports Generated
+
+- **health_check.log** - Detailed monitoring logs
+- **health_check_alerts.log** - Alert-only logs
+- **health_check_report.json** - Structured health data (used by dashboards)
+- **health_check_dashboard.html** - HTML report (deployed to GitHub Pages)
+- **health_check_report.xlsx** - Excel report
+
+## CI/CD Integration
+
+GitHub Actions automatically runs health checks every 5 minutes and deploys the latest HTML report to GitHub Pages for live viewing.
+
+## Troubleshooting
+
+- Check `config.ini` for correct settings
+- View `logs/health_check_alerts.log` for alert history
+- Ensure URLs in `urls.txt` are accessible
+- For Outlook: Verify pywin32 is installed and Outlook is running
 
 ## Monitored URLs
 
