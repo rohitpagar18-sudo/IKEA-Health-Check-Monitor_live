@@ -27,6 +27,7 @@ from collections import defaultdict
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import sys
 
 # ============================================================================
 # Configuration
@@ -501,6 +502,11 @@ def main():
     for i, url in enumerate(monitor.urls, 1):
         print(f"{i:2d}. {url}")
     print("-" * 80 + "\n")
+    
+    # Check for --once argument
+    if len(sys.argv) > 1 and sys.argv[1] == "--once":
+        monitor.run_single_check_cycle()
+        return
     
     # Start monitoring
     try:

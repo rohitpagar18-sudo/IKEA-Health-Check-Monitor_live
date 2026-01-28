@@ -1,18 +1,19 @@
 name: IKEA Health Check Monitor CI
 
 on:
+  schedule:
+    - cron: '*/5 * * * *'  # every 30 minutes
+  workflow_dispatch:
   push:
     branches:
       - master
       - main
+      - sahil
   pull_request:
     branches:
       - master
       - main
       - sahil
-  workflow_dispatch:
-  schedule:
-    - cron: '0 * * * *'  # every hour
 
 jobs:
   healthcheck:
@@ -35,14 +36,14 @@ jobs:
       - name: Generate Excel artifact
         run: |
           python -c "import json, pandas as pd; d=json.load(open('logs/health_check_report.json')); pd.DataFrame.from_dict(d['url_status_summary'], orient='index').to_excel('logs/health_check_report.xlsx')"
+      - name: Generate HTML dashboard
+        run: |
+          python report_generator.py html logs/health_check_dashboard.html
       - name: Upload Excel artifact
         uses: actions/upload-artifact@v4
         with:
           name: health_check_report
           path: logs/health_check_report.xlsx
-      - name: Upload HTML dashboard
-        run: |
-          python report_generator.py html logs/health_check_dashboard.html
       - name: Upload HTML artifact
         uses: actions/upload-artifact@v4
         with:
