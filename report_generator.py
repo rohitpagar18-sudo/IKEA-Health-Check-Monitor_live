@@ -35,6 +35,7 @@ class ReportGenerator:
         <html>
         <head>
             <title>IKEA Server Health Check Report</title>
+            <meta http-equiv=\"refresh\" content=\"30\">
             <style>
                 body {
                     font-family: Arial, sans-serif;

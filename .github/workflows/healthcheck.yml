@@ -39,6 +39,8 @@ jobs:
       - name: Generate HTML dashboard
         run: |
           python report_generator.py html logs/health_check_dashboard.html
+      - name: Rename dashboard to index.html
+        run: mv logs/health_check_dashboard.html logs/index.html
       - name: Upload Excel artifact
         uses: actions/upload-artifact@v4
         with:
@@ -48,4 +50,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: health_check_dashboard
-          path: logs/health_check_dashboard.html
+          path: logs/index.html
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./logs
+          publish_branch: gh-pages
+          force_orphan: true
+          enable_jekyll: false
