@@ -1,0 +1,4 @@
+# Ignore everything in logs except .gitkeep and index.html
+logs/*
+!logs/.gitkeep
+!logs/index.html
