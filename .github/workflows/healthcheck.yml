@@ -2,7 +2,7 @@ name: IKEA Health Check Monitor CI
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # every 5 minutess
+    - cron: '*/5 * * * *'  # every 30 minutes
   workflow_dispatch:
   push:
     branches:
