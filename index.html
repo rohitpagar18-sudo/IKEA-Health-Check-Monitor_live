@@ -1,1 +1,74 @@
-<!-- This file is intentionally left blank. The live dashboard is generated and deployed from logs/index.html by the workflow. Do not use this file for GitHub Pages. See README_DEPLOY.md for details. -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IKEA Health Check Live Monitor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="30">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+        h1 { color: #0051BA; margin: 20px; }
+        #status-table { width: 95%; margin: 0 auto 30px auto; border-collapse: collapse; background: #fff; }
+        #status-table th, #status-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #status-table th { background: #0051BA; color: #fff; }
+        #status-table tr:nth-child(even) { background: #f2f2f2; }
+        .up { color: green; font-weight: bold; }
+        .down { color: red; font-weight: bold; }
+        .footer { text-align: center; color: #888; margin-bottom: 20px; }
+        .timestamp { font-size: 0.95em; color: #555; }
+    </style>
+    <script>
+        async function fetchStatus() {
+            try {
+                const res = await fetch('logs/health_check_report.json?_=' + Date.now());
+                if (!res.ok) throw new Error('No report found');
+                const data = await res.json();
+                document.getElementById('timestamp').textContent = 'Last updated: ' + (data.timestamp || 'N/A');
+                const summary = data.url_status_summary || {};
+                let html = '';
+                for (const url in summary) {
+                    const info = summary[url];
+                    html += `<tr>
+                        <td>${url}</td>
+                        <td class="${info.current_status === 'UP' ? 'up' : 'down'}">${info.current_status}</td>
+                        <td>${info.last_status_code}</td>
+                        <td>${info.last_response_time}</td>
+                        <td>${info.consecutive_failures}</td>
+                        <td>${info.last_check}</td>
+                    </tr>`;
+                }
+                document.getElementById('status-body').innerHTML = html;
+            } catch (e) {
+                document.getElementById('status-body').innerHTML = '<tr><td colspan="6">No data available. Run the health check monitor first.</td></tr>';
+            }
+        }
+        setInterval(fetchStatus, 30000);
+        window.onload = fetchStatus;
+    </script>
+</head>
+<body>
+    <h1>IKEA Health Check Live Monitor</h1>
+    <div class="timestamp" id="timestamp">Last updated: ...</div>
+    <table id="status-table">
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Last Status Code</th>
+                <th>Response Time</th>
+                <th>Consecutive Failures</th>
+                <th>Last Check</th>
+            </tr>
+        </thead>
+        <tbody id="status-body">
+            <tr><td colspan="6">Loading...</td></tr>
+        </tbody>
+        <!-- sahil -->
+        <!-- sh -->
+    </table>
+    <div class="footer">
+        Auto-refreshes every 30 seconds.<br>
+        <a href="logs/health_check_report.json" download>Download latest JSON report</a>
+    </div>
+</body>
+</html>
