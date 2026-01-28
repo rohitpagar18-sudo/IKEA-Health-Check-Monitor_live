@@ -1,0 +1,50 @@
+name: IKEA Health Check Monitor CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+      - sahil
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'  # every hour
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flask pandas openpyxl
+      - name: Run health check monitor (one cycle)
+        run: |
+          python health_check_monitor.py --once
+      - name: Generate Excel artifact
+        run: |
+          python -c "import json, pandas as pd; d=json.load(open('logs/health_check_report.json')); pd.DataFrame.from_dict(d['url_status_summary'], orient='index').to_excel('logs/health_check_report.xlsx')"
+      - name: Upload Excel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: health_check_report
+          path: logs/health_check_report.xlsx
+      - name: Upload HTML dashboard
+        run: |
+          python report_generator.py html logs/health_check_dashboard.html
+      - name: Upload HTML artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: health_check_dashboard
+          path: logs/health_check_dashboard.html
