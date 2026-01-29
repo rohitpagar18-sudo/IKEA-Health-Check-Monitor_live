@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>IKEA Health Check Dashboard</title>
+    <meta http-equiv='refresh' content='60'>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fa; margin: 0; }
+        .navbar { background: #0051BA; color: #fff; padding: 24px 0 16px 0; text-align: center; box-shadow: 0 2px 8px #0001; }
+        .navbar h1 { margin: 0; font-size: 2.2em; letter-spacing: 2px; }
+        .navbar .subtitle { font-size: 1.1em; color: #cce0ff; margin-top: 6px; }
+        .navbar .meta { font-size: 1em; color: #e0e0e0; margin-top: 10px; }
+        .container { width: 100vw; max-width: 100vw; margin: 0; background: none; border-radius: 0; box-shadow: none; overflow-x: hidden; }
+        .summary-cards { display: flex; flex-wrap: nowrap; overflow-x: auto; justify-content: center; gap: 16px; margin: 32px 0 24px 0; width: 100%; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 12px #0002; padding: 14px 12px; min-width: 120px; max-width: 140px; text-align: center; flex: 0 0 auto; }
+        .card-title { color: #888; font-size: 0.95em; margin-bottom: 6px; }
+        .card-value { font-size: 1.3em; font-weight: bold; color: #0051BA; }
+        .card-value.failures { color: #d32f2f; }
+        .card-value.healthy { color: #388e3c; }
+        .card-value.down { color: #d32f2f; }
+        .dashboard-table { width: 100vw; margin: 0 auto 40px auto; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px #0001; }
+        .dashboard-table th, .dashboard-table td { padding: 12px 10px; text-align: left; }
+        .dashboard-table th { background: #0051BA; color: #fff; font-weight: 600; }
+        .dashboard-table tr:nth-child(even) { background: #f2f6fa; }
+        .dashboard-table td.status-up { color: #388e3c; font-weight: bold; }
+        .dashboard-table td.status-down { color: #d32f2f; font-weight: bold; }
+        .dashboard-table td.status-up::before { content: '🟢 '; }
+        .dashboard-table td.status-down::before { content: '🔴 '; }
+        .footer { text-align: center; color: #888; font-size: 0.98em; margin: 30px 0 10px 0; }
+        .copyright { text-align: center; color: #0051BA; font-size: 1em; margin: 10px 0 20px 0; font-weight: bold; }
+        @media (max-width: 900px) { .summary-cards { flex-wrap: nowrap; overflow-x: auto; } .card { min-width: 110px; width: 110px; } }
+        @media (max-width: 600px) { .dashboard-table th, .dashboard-table td { font-size: 0.95em; padding: 8px 4px; } }
+    </style>
+</head>
+<body>
+    <div class='navbar'>
+        <h1>IKEA Health Check Dashboard</h1>
+        <div class='subtitle'>Live Server Monitoring & Availability Report</div>
+        <div class='meta'>
+            Report generated: 2026-01-29 11:52:48 &nbsp;|&nbsp; Monitoring duration: 1 seconds
+        </div>
+    </div>
+    <div class='container'>
+    <div class='summary-cards'>
+        <div class='card'>
+            <div class='card-title'>Total URLs</div>
+            <div class='card-value'>17</div>
+        </div>
+        <div class='card'>
+            <div class='card-title'>Total Checks</div>
+            <div class='card-value'>17</div>
+        </div>
+        <div class='card'>
+            <div class='card-title'>Currently Healthy</div>
+            <div class='card-value healthy'>2</div>
+        </div>
+        <div class='card'>
+            <div class='card-title'>Currently Down</div>
+            <div class='card-value down'>15</div>
+        </div>
+        <div class='card'>
+            <div class='card-title'>Total Failures</div>
+            <div class='card-value failures'>15</div>
+        </div>
+        <div class='card'>
+            <div class='card-title'>Failure Rate</div>
+            <div class='card-value'>88.24%</div>
+        </div>
+    </div>
+    <table class='dashboard-table'>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Status Code</th>
+                <th>Response Time</th>
+                <th>Consecutive Failures</th>
+                <th>Last Check</th>
+            </tr>
+        </thead>
+        <tbody>
+<tr><td>1</td><td>http://retat085-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>2</td><td>http://rca1270-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>3</td><td>http://rus1100-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>4</td><td>http://retse470-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>5</td><td>http://retro500-lx4030.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>6</td><td>http://retpl307-lx4030.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>7</td><td>http://rjp1176-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>8</td><td>http://retit295-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>9</td><td>http://retin629-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>10</td><td>http://itseelm-lx44097.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>11</td><td>http://rgb1010-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>12</td><td>http://retfr562-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>13</td><td>http://retes502-lx4030.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>14</td><td>http://res12852-lx4030.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>15</td><td>http://retdk172-lx4020.ikea.com:7003/web/</td><td class='status-down'>DOWN</td><td>0</td><td>0.000s</td><td>1</td><td>2026-01-29 11:52:47</td></tr><tr><td>16</td><td>http://google.com</td><td class='status-up'>UP</td><td>200</td><td>0.972s</td><td>0</td><td>2026-01-29 11:52:48</td></tr><tr><td>17</td><td>https://onecognizant.cognizant.com/</td><td class='status-up'>UP</td><td>200</td><td>0.543s</td><td>0</td><td>2026-01-29 11:52:48</td></tr>
+        </tbody>
+    </table>
+    </div>
+    <div class='footer'>&nbsp;</div>
+    <div class='copyright'>IKEA Health Check Monitoring Tool &copy; 2026</div>
+</body>
+</html>

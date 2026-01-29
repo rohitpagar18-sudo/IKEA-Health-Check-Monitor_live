@@ -1,103 +1,112 @@
-╔════════════════════════════════════════════════════════════════════════════════╗
-║                                                                                ║
-║         🎉 IKEA HEALTH CHECK MONITOR - INSTALLATION COMPLETE! 🎉              ║
-║                                                                                ║
-╚════════════════════════════════════════════════════════════════════════════════╝
+================================================================================
+IKEA HEALTH CHECK MONITORING TOOL - QUICK START GUIDE
+================================================================================
 
-📍 LOCATION
-──────────────────────────────────────────────────────────────────────────────────
-c:\Users\2194998\OneDrive - Cognizant\Desktop\IKEA_health _check
+🚀 GETTING STARTED:
 
+1. Install dependencies:
+   pip install -r requirements.txt
 
-📦 WHAT'S BEEN CREATED
-──────────────────────────────────────────────────────────────────────────────────
+2. Run the tool:
+   python run.py
 
-✅ CORE APPLICATION (3 files)
-   • health_check_monitor.py      → Main monitoring engine
-   • report_generator.py          → Report generation tool
-   • test_monitor.py              → Diagnostics & testing
+   Or use command-line mode:
+   - python run.py --once           (Run single check)
+   - python run.py --continuous     (Run continuous monitoring)
+   - python run.py --report         (Generate reports)
 
-✅ CONFIGURATION (3 files)
-   • urls.txt                     → 15 IKEA server URLs
-   • config.ini                   → Settings & parameters
-   • setup_config.py              → Interactive setup wizard
+================================================================================
+CONFIGURATION:
 
-✅ UTILITIES (2 files)
-   • start_monitor.bat            → Windows launcher
-   • requirements.txt             → Python dependencies
+Edit 'config.ini' to customize:
+- Check intervals (default: 5 minutes)
+- Request timeout (default: 10 seconds)
+- Log directory (default: logs/)
+- Email alerts (optional)
 
-✅ DOCUMENTATION (7 files!)
-   • README.md                    → Complete 500+ line reference
-   • QUICKSTART.md                → 5-minute setup guide
-   • GETTING_STARTED.md           → Step-by-step checklist
-   • PROJECT_SUMMARY.md           → System architecture
-   • TASK_SCHEDULER_SETUP.md      → Automation guide
-   • INSTALLATION_COMPLETE.md     → This installation summary
-   • (plus inline code comments)
+================================================================================
+FILES:
 
+- run.py                  ← Main unified runner (USE THIS!)
+- config.ini              ← Configuration settings
+- urls.txt                ← List of URLs to monitor
+- logs/                   ← Logs and reports directory
+- logs/health_check.log           ← Main log file
+- logs/health_check_alerts.log    ← Alert log file
+- logs/health_check_report.json   ← Latest report (JSON)
+- logs/health_check_report.xlsx   ← Excel report
+- logs/index.html                 ← HTML dashboard
 
-🚀 QUICK START (Do This First!)
-──────────────────────────────────────────────────────────────────────────────────
+================================================================================
+MENU OPTIONS:
 
-1. INSTALL DEPENDENCIES (1 minute)
-   ┌─────────────────────────────────────────────────────────────────────────┐
-   │ cd "c:\Users\2194998\OneDrive - Cognizant\Desktop\IKEA_health _check"  │
-   │ pip install -r requirements.txt                                         │
-   └─────────────────────────────────────────────────────────────────────────┘
+1. Run Single Health Check Cycle
+   - Checks all URLs once
+   - Generates immediate report
+   - Good for testing configuration
 
-2. VERIFY SETUP (1 minute)
-   ┌─────────────────────────────────────────────────────────────────────────┐
-   │ python test_monitor.py all                                              │
-   └─────────────────────────────────────────────────────────────────────────┘
+2. Start Continuous Monitoring
+   - Monitors URLs continuously
+   - Adjusts check interval based on failures
+   - Press Ctrl+C to stop
 
-3. START MONITORING (3+ minutes)
-   ┌─────────────────────────────────────────────────────────────────────────┐
-   │ python health_check_monitor.py                                          │
-   │                                                                         │
-   │ • Watch for ✓ (healthy) and ✗ (down) symbols                          │
-   │ • See status codes and response times                                  │
-   │ • Press Ctrl+C when done                                              │
-   └─────────────────────────────────────────────────────────────────────────┘
+3. Generate Reports (Excel & HTML)
+   - Creates Excel report with detailed status
+   - Creates beautiful HTML dashboard
+   - Based on latest check data
 
-4. VIEW RESULTS (1 minute)
-   ┌─────────────────────────────────────────────────────────────────────────┐
-   │ python report_generator.py                                              │
-   │                                                                         │
-   │ Or generate HTML:                                                      │
-   │ python report_generator.py html dashboard.html                         │
-   └─────────────────────────────────────────────────────────────────────────┘
+4. View Recent Alerts
+   - Shows last 20 alerts/events
+   - Helps track server issues
 
+5. Exit
+   - Closes the application
 
-📊 MONITORING 15 IKEA SERVERS
-──────────────────────────────────────────────────────────────────────────────────
+================================================================================
+UNDERSTANDING OUTPUT:
 
-Locations Covered:
-  🌍 Europe      → Austria, Sweden, France, Spain, Denmark, Italy, Poland
-  🌏 Asia-Pac    → Japan, India, Southeast Asia
-  🌎 Americas    → Canada, Russia
-  🚀 Advanced    → Romania, Eastern Europe
+[OK]   - Server is responding and healthy
+[FAIL] - Server is not responding or unhealthy
 
-All checking: :7003/web/ endpoint
+Example output:
+  [OK]   | http://example.com:7003/web/           | Code: 200 | Time: 0.234s
+  [FAIL] | http://failing.com:7003/web/            | Error: Connection Error
 
+================================================================================
+LOGS & REPORTS:
 
-✨ KEY FEATURES
-──────────────────────────────────────────────────────────────────────────────────
+- Check 'logs/' folder for all reports and logs
+- JSON report: logs/health_check_report.json (latest data)
+- Excel report: logs/health_check_report.xlsx (formatted report)
+- HTML dashboard: logs/index.html (open in browser)
+- Alert log: logs/health_check_alerts.log (all alerts)
 
-✓ Continuous Monitoring
-  • Every 5 minutes (default, configurable)
-  • Every 1 minute when servers are down
-  • 10-second timeout per request
+================================================================================
+TROUBLESHOOTING:
 
-✓ Intelligent Alerts
-  • After 2 consecutive failures (configurable)
-  • Immediate recovery notifications
-  • Optional email alerts
+Q: No URLs found?
+A: Make sure urls.txt exists and contains valid URLs (one per line)
 
-✓ Multiple Reports
-  • HTML dashboards for visual inspection
-  • CSV exports for Excel
-  • JSON for tool integration
-  • Console output for quick checks
+Q: Connection errors?
+A: Check your network connection and URL accessibility
+   Some URLs may require VPN or special access
+
+Q: Reports not generating?
+A: Run at least one health check cycle first
+   Then select "Generate Reports"
+
+Q: Want to modify check intervals?
+A: Edit config.ini and change 'check_interval' value (in seconds)
+
+================================================================================
+SUPPORT:
+
+For issues or questions, check:
+- logs/health_check.log for detailed error messages
+- config.ini for configuration options
+- urls.txt to ensure URLs are correctly formatted
+
+================================================================================
 
 ✓ Comprehensive Logging
   • All activities logged
