@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 from collections import defaultdict
 import configparser
+import subprocess
 
 # ============================================================================
 # CONFIGURATION LOADER
@@ -603,12 +604,6 @@ class ReportGenerator:
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(html_content)
         print(f"  [*] HTML report generated: {output_file}")
-        # Trigger email alert after report generation
-        try:
-            import subprocess
-            subprocess.Popen(['python', 'email_alert_win32.py'], cwd=str(Path(__file__).parent))
-        except Exception as e:
-            print(f"  [!] Failed to trigger email alert: {e}")
 
 
 # ============================================================================
@@ -707,34 +702,26 @@ def main():
 
 
 if __name__ == "__main__":
-    # Handle command-line arguments
-    if len(sys.argv) > 1:
-        config = ConfigLoader.load()
-        
-        if sys.argv[1] == '--once':
-            monitor = HealthCheckMonitor(config)
-            if monitor.urls:
-                monitor.run_single_check_cycle()
-                monitor.print_summary()
-        
-        elif sys.argv[1] == '--continuous':
-            monitor = HealthCheckMonitor(config)
-            if monitor.urls:
-                monitor.start_continuous_monitoring()
-        
-        elif sys.argv[1] == '--report':
+    config = ConfigLoader.load()
+    check_interval = config.get('check_interval', 300)
+    while True:
+        monitor = HealthCheckMonitor(config)
+        if monitor.urls:
+            monitor.run_single_check_cycle()
+            monitor.print_summary()
+            # Generate reports
             generator = ReportGenerator(config)
             generator.generate_html_report()
             try:
                 generator.generate_excel_report()
-            except:
-                pass
-        
+            except Exception as e:
+                print(f"  ⚠ Excel report generation skipped: {str(e)}")
+            # Send email alert
+            try:
+                subprocess.run([sys.executable, 'email_alert_win32.py'], check=True)
+            except Exception as e:
+                print(f"  ⚠ Email alert failed: {str(e)}")
         else:
-            print("Usage:")
-            print("  python run.py           - Interactive menu")
-            print("  python run.py --once    - Run single check cycle")
-            print("  python run.py --continuous - Continuous monitoring")
-            print("  python run.py --report  - Generate reports")
-    else:
-        main()
+            print("\n  ✗ ERROR: No URLs found in urls.txt\n")
+        print(f"\n[*] Waiting {check_interval//60} minutes before next health check...\n")
+        time.sleep(check_interval)

@@ -15,3 +15,6 @@ http://res12852-lx4030.ikea.com:7003/web/
 http://retdk172-lx4020.ikea.com:7003/web/
 http://google.com
 https://onecognizant.cognizant.com/
+https://youtube.com
+http://localhost:8501/
+https://gmail.com
