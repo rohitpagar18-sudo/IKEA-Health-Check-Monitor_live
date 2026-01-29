@@ -1,14 +1,18 @@
 import win32com.client as win32
 from pathlib import Path
 import os
+from email_contacts import SENDER, RECIPIENTS, CC, BCC
 
-def send_alert_email(sender, recipients, subject, body_html, attachments=None):
+def send_alert_email(sender, recipients, subject, body_html, attachments=None, cc=None, bcc=None):
     outlook = win32.Dispatch('outlook.application')
     mail = outlook.CreateItem(0)
-    mail.To = recipients if isinstance(recipients, str) else ','.join(recipients)
+    mail.To = recipients if isinstance(recipients, str) else ';'.join(recipients)
+    if cc:
+        mail.CC = cc if isinstance(cc, str) else ';'.join(cc)
+    if bcc:
+        mail.BCC = bcc if isinstance(bcc, str) else ';'.join(bcc)
     mail.Subject = subject
     mail.HTMLBody = body_html
-    mail.Sender = sender
     if attachments:
         for file in attachments:
             if Path(file).exists():
@@ -26,7 +30,20 @@ def build_alert_html(summary_dict, summary_fallback, timestamp, duration, failur
         summary_table += "</table>"
         summary_html = f'<h3>Monitoring Summary</h3>{summary_table}'
     else:
-        summary_html = f'<h3>Monitoring Summary (Last 20 Log Lines)</h3><pre style="background:#f8f8f8;padding:10px;border-radius:6px;">{summary_fallback}</pre>'
+        # Add line numbers to each log line
+        log_lines = summary_fallback.splitlines()
+        numbered_log = '\n'.join([f"{i+1:02d}. {line}" for i, line in enumerate(log_lines)])
+        summary_html = f'<h3>Recent System Activity (Last 20 Health Check Events)</h3><pre style="background:#f8f8f8;padding:10px;border-radius:6px;">{numbered_log}</pre>'
+    attachments_desc = '''
+        <div style="margin:24px 0 10px 0;">
+            <b>Attached Files:</b>
+            <ul style="font-size:1em;line-height:1.6;">
+                <li><b>health_check_report.xlsx</b>: Excel report with detailed status and history for each monitored URL.</li>
+                <li><b>index.html</b>: Interactive HTML dashboard for a visual overview of server health and trends.</li>
+                <li><b>health_check.log</b>: Raw log file containing all health check events, errors, and alerts for audit/troubleshooting.</li>
+            </ul>
+        </div>
+    '''
     return f'''
     <html>
     <head>
@@ -52,6 +69,7 @@ def build_alert_html(summary_dict, summary_fallback, timestamp, duration, failur
                 <tr><td>{failure_rate}</td><td class="ok">{healthy}</td><td class="fail">{down}</td></tr>
             </table>
         </div>
+        {attachments_desc}
         <div style="margin:20px auto;width:90%;">
             {summary_html}
         </div>
@@ -64,8 +82,10 @@ def build_alert_html(summary_dict, summary_fallback, timestamp, duration, failur
 
 def send_health_check_alert():
     # Configurable details
-    sender = 'Rohit.AvinashPagar@cognizant.com'
-    recipients = ['Rohit.AvinashPagar@cognizant.com']
+    sender = SENDER
+    recipients = RECIPIENTS
+    cc = CC
+    bcc = BCC
     subject = 'IKEA Health Check Alert - Automated Report'
     # Paths
     logs_dir = Path(__file__).parent / 'logs'
@@ -111,7 +131,7 @@ def send_health_check_alert():
             m = re.search(r'Currently Down</div>\s*<div class=\'card-value down\'>(\d+)</div>', content)
             if m: down = m.group(1)
     body_html = build_alert_html(summary_dict, summary_fallback, timestamp, duration, failure_rate, healthy, down)
-    send_alert_email(sender, recipients, subject, body_html, attachments=[excel, html, log])
+    send_alert_email(sender, recipients, subject, body_html, attachments=[excel, html, log], cc=cc, bcc=bcc)
 
 if __name__ == '__main__':
     send_health_check_alert()
