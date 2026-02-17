@@ -1,0 +1,6 @@
+http://google.com
+https://onecognizant.cognizant.com/
+https://youtube.com
+http://localhost:8501/
+https://gmail.com
+https://instagram.com
