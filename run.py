@@ -3,23 +3,35 @@ IKEA SERVER HEALTH CHECK MONITORING TOOL - UNIFIED RUNNER
 ==========================================================
 
 Single script to run all health checks, generate reports, and create Excel/HTML outputs.
-Email alerts are triggered ONLY when a URL fails consecutively after the configured
-retry threshold (default: 3 retries). This prevents unnecessary inbox notifications.
+
+EMAIL ALERT BEHAVIOR (THRESHOLD-BASED, NOT SCHEDULED):
+======================================================
+Email alerts are triggered ONLY when specific failure conditions are met:
+- When a URL fails, the consecutive_failures counter increments
+- Email is triggered ONLY when consecutive_failures reaches alert_threshold (default: 3)
+- Email is sent ONLY IF email_enabled=true in config.ini (otherwise alert is logged only)
+- Recovery emails are sent when a previously-alerted URL comes back online
+- This prevents unnecessary inbox notifications when there are no real issues
+
+EXAMPLE WORKFLOW:
+1st failure -> Log warning (no email)
+2nd failure -> Log warning (no email)  
+3rd failure -> ALERT THRESHOLD REACHED -> Check email_enabled setting
+              - If enabled: Send alert email
+              - If disabled: Log to alert file only (no email)
+URL recovers -> Send recovery email (if email was previously sent)
+
+This ensures minimal alert fatigue while maintaining critical notifications.
 
 No external dependencies required - everything is self-contained.
 
 Usage:
-    python run.py              # Run single check cycle
-    python run.py --continuous # Run continuous monitoring
-    python run.py --report     # Generate report from latest data
+    python run.py              # Run continuous monitoring
+    (Interactive menu will appear for other options)
 
-ALERT TRIGGERING LOGIC:
-- When a URL health check FAILS, consecutive_failures counter increments
-- On each retry (quick check), the URL is checked again
-- Only when consecutive_failures reaches alert_threshold (default: 3),
-  an alert email is sent with a full health report
-- Once the URL recovers (returns to UP state), a recovery email is sent
-- This ensures minimal alert fatigue while maintaining critical notifications
+CONFIGURATION:
+    config.ini - Enable/disable emails, set threshold, email recipients, etc.
+    urls.txt   - List of URLs to monitor
 """
 #C:\Users\2194998\OneDrive - Cognizant\Desktop\IKEA_health_check_final\IKEA_health_check_final\email_alert_win32.py
 import requests
@@ -233,10 +245,21 @@ class HealthCheckMonitor:
         # ============================================================================
         # ALERT TRIGGER: Email is sent ONLY when consecutive failures reach threshold
         # THRESHOLD LOCATION: alert_threshold from config.ini (default: 3 retries)
-        # This means: 1st fail -> no email, 2nd fail -> no email, 3rd fail -> EMAIL SENT
+        # EMAIL DECISION: Email is only sent IF email_enabled=true in config.ini
+        # ALERT FLOW:
+        #   1st fail -> Log warning (no email)
+        #   2nd fail -> Log warning (no email)
+        #   3rd fail -> THRESHOLD REACHED -> Check email_enabled setting
+        #              - If true: Send alert email + log SUCCESS
+        #              - If false: Log to alert file but NO EMAIL
         # ============================================================================
-        if self.consecutive_failures[url] == self.config['alert_threshold']:
-            # Mark that alert has been sent for this URL
+        if self.consecutive_failures[url] < self.config['alert_threshold']:
+            # Still below threshold - don't send alert yet
+            remaining = self.config['alert_threshold'] - self.consecutive_failures[url]
+            self.logger.info(f"  [FAILURE {self.consecutive_failures[url]}/{self.config['alert_threshold']}] {remaining} more failure(s) needed to trigger alert email")
+        elif self.consecutive_failures[url] == self.config['alert_threshold']:
+            # Threshold reached - trigger alert
+            self.logger.critical(f"*** ALERT THRESHOLD REACHED ({self.config['alert_threshold']} failures) ***")
             self.alert_sent[url] = True
             self._send_alert(url, status_code, message)
     
@@ -256,26 +279,31 @@ class HealthCheckMonitor:
         self.downtime_start.pop(url, None)
     
     def _send_alert(self, url: str, status_code: int, message: str):
-        """Send alert for URL failure - TRIGGER EMAIL NOTIFICATION"""
+        """Send alert for URL failure - TRIGGER EMAIL NOTIFICATION ONLY IF ENABLED"""
         alert_msg = f"[ALERT] {url} DOWN - Code: {status_code} - {message}"
         self.alert_logger.error(alert_msg)
         self.logger.error(alert_msg)
         
-        # Generate reports and send email when alert threshold is reached
-        self.logger.info(f"[ALERT TRIGGERED] Generating report and sending email for {url}")
+        # Generate reports
+        self.logger.info(f"[ALERT TRIGGERED] URL has failed {self.config['alert_threshold']} times. Threshold reached for: {url}")
         self._generate_report()
+        
+        # Check if email alerts are enabled in config
+        if not self.config['email_enabled']:
+            self.logger.warning(f"[ALERT NOT EMAILED] Email alerts are DISABLED in config.ini. Alert details logged but NO EMAIL SENT.")
+            print(f"\n⚠ [ALERT LOGGED] Alert for {url} logged but NOT emailed (email_enabled = false in config)")
+            return
         
         # Send email via email_alert_win32.py with alert flag
         try:
             # Call email script with flag indicating this is an alert
+            self.logger.info(f"[SENDING EMAIL] Dispatching alert email for {url}...")
             subprocess.run(
                 [sys.executable, 'email_alert_win32.py', '--alert'],
-                check=True,
-                capture_output=True,
-                text=True
+                check=True
             )
             print(f"\n✓ [EMAIL SENT] Alert email notification sent for {url}")
-            self.logger.info(f"✓ [EMAIL SENT] Alert email notification sent for {url}")
+            self.logger.info(f"✓ [EMAIL SENT] Alert email notification successfully sent for {url}")
         except subprocess.CalledProcessError as e:
             self.logger.error(f"✗ Failed to send email alert: {e.stderr}")
             print(f"\n✗ [EMAIL FAILED] Could not send alert email for {url}")
@@ -284,25 +312,30 @@ class HealthCheckMonitor:
             print(f"\n✗ [EMAIL FAILED] Error: {str(e)}")
     
     def _send_recovery_alert(self, url: str, downtime_duration: timedelta):
-        """Send alert for URL recovery"""
+        """Send alert for URL recovery - ONLY IF EMAIL ALERTS ENABLED AND ALERT WAS PREVIOUSLY SENT"""
         alert_msg = f"[RECOVERY] {url} UP after {downtime_duration.total_seconds():.0f}s downtime"
         self.alert_logger.info(alert_msg)
         self.logger.warning(alert_msg)
         
-        # Generate reports and send recovery email
-        self.logger.info(f"[RECOVERY NOTIFICATION] Generating report and sending recovery email for {url}")
+        # Generate reports
+        self.logger.info(f"[RECOVERY NOTIFICATION] URL recovered: {url}. Generating report...")
         self._generate_report()
+        
+        # Check if email alerts are enabled in config
+        if not self.config['email_enabled']:
+            self.logger.warning(f"[RECOVERY NOT EMAILED] Email alerts are DISABLED in config.ini. Recovery logged but NO EMAIL SENT.")
+            print(f"\n⚠ [RECOVERY LOGGED] Recovery for {url} logged but NOT emailed (email_enabled = false in config)")
+            return
         
         # Send recovery email
         try:
+            self.logger.info(f"[SENDING EMAIL] Dispatching recovery email for {url}...")
             subprocess.run(
                 [sys.executable, 'email_alert_win32.py', '--recovery'],
-                check=True,
-                capture_output=True,
-                text=True
+                check=True
             )
             print(f"\n✓ [EMAIL SENT] Recovery email notification sent for {url}")
-            self.logger.info(f"✓ [EMAIL SENT] Recovery email notification sent for {url}")
+            self.logger.info(f"✓ [EMAIL SENT] Recovery email notification successfully sent for {url}")
         except subprocess.CalledProcessError as e:
             self.logger.error(f"✗ Failed to send recovery email: {e.stderr}")
             print(f"\n✗ [EMAIL FAILED] Could not send recovery email for {url}")

@@ -3,8 +3,8 @@
 
 SENDER = 'Rohit.AvinashPagar@cognizant.com'
 RECIPIENTS = [
-    'Rohit.AvinashPagar@cognizant.com'
-    # 'Sksahil.Sakil@cognizant.com',
+    'Rohit.AvinashPagar@cognizant.com',
+    'Sksahil.Sakil@cognizant.com'
     # 'Vaishnavi.Shetti2@cognizant.com'
 ]
 CC = [

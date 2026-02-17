@@ -8,11 +8,17 @@ def send_alert_email(sender, recipients, subject, body_html, attachments=None, c
     """Send email using Outlook"""
     outlook = win32.Dispatch('outlook.application')
     mail = outlook.CreateItem(0)
-    mail.To = recipients if isinstance(recipients, str) else ';'.join(recipients)
+    
+    # Store recipient info before sending
+    to_addr = recipients if isinstance(recipients, str) else ';'.join(recipients)
+    cc_addr = cc if isinstance(cc, str) else ';'.join(cc) if cc else None
+    bcc_addr = bcc if isinstance(bcc, str) else ';'.join(bcc) if bcc else None
+    
+    mail.To = to_addr
     if cc:
-        mail.CC = cc if isinstance(cc, str) else ';'.join(cc)
+        mail.CC = cc_addr
     if bcc:
-        mail.BCC = bcc if isinstance(bcc, str) else ';'.join(bcc)
+        mail.BCC = bcc_addr
     mail.Subject = subject
     mail.HTMLBody = body_html
     if attachments:
@@ -21,11 +27,11 @@ def send_alert_email(sender, recipients, subject, body_html, attachments=None, c
                 mail.Attachments.Add(str(file))
     mail.Send()
     print(f"[✓] Email sent successfully!")
-    print(f"    To: {mail.To}")
-    if cc:
-        print(f"    CC: {mail.CC}")
-    if bcc:
-        print(f"    BCC: {mail.BCC}")
+    print(f"    To: {to_addr}")
+    if cc_addr:
+        print(f"    CC: {cc_addr}")
+    if bcc_addr:
+        print(f"    BCC: {bcc_addr}")
 
 def build_alert_html(summary_dict, summary_fallback, timestamp, duration, failure_rate, healthy, down):
     if summary_dict:
